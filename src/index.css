@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 97%;
+    --foreground: 30 10% 15%;
+
+    --card: 30 25% 96%;
+    --card-foreground: 30 10% 15%;
+
+    --popover: 40 33% 97%;
+    --popover-foreground: 30 10% 15%;
+
+    --primary: 27 40% 59%;
+    --primary-foreground: 40 33% 97%;
+
+    --secondary: 30 30% 93%;
+    --secondary-foreground: 30 10% 25%;
+
+    --muted: 30 15% 92%;
+    --muted-foreground: 30 8% 50%;
+
+    --accent: 27 40% 59%;
+    --accent-foreground: 40 33% 97%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 30 20% 88%;
+    --input: 30 20% 88%;
+    --ring: 27 40% 59%;
+
+    --radius: 0.5rem;
+
+    --rose-gold: 27 40% 59%;
+    --rose-gold-light: 27 35% 75%;
+    --rose-gold-dark: 27 45% 45%;
+    --cream: 40 33% 97%;
+    --warm-beige: 30 30% 93%;
+    --warm-beige-dark: 30 20% 85%;
+    --charcoal: 30 10% 15%;
+    --soft-gray: 30 8% 50%;
+
+    --font-heading: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+
+    --gradient-rose: linear-gradient(135deg, hsl(27 40% 59%), hsl(27 35% 70%));
+    --gradient-warm: linear-gradient(180deg, hsl(40 33% 97%), hsl(30 30% 93%));
+    --shadow-soft: 0 4px 20px -4px hsl(27 40% 59% / 0.15);
+    --shadow-card: 0 2px 12px -2px hsl(30 10% 15% / 0.06);
+    --shadow-elevated: 0 12px 40px -8px hsl(30 10% 15% / 0.12);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-size: 16px;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 360px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .gradient-rose {
+    background: var(--gradient-rose);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+}
