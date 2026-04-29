@@ -272,9 +272,13 @@ const AdminPage = () => {
       headers,
     });
 
-    const payload = await response.json().catch(() => ({}));
+    const payload = await response.json().catch(() => null);
     if (!response.ok) {
       throw new Error(payload?.message ?? "Request failed.");
+    }
+
+    if (!payload) {
+      throw new Error("The API returned an invalid response. Check that the backend API URL is pointing to the backend server.");
     }
 
     return payload;
@@ -563,7 +567,12 @@ const AdminPage = () => {
         }),
       });
 
-      setSettings({ ...defaultSettings, ...payload.data.settings });
+      const importedSettings = payload?.data?.settings;
+      if (!importedSettings) {
+        throw new Error("CJ import finished, but the backend response did not include updated settings.");
+      }
+
+      setSettings({ ...defaultSettings, ...importedSettings });
       const productsPayload = await apiRequest("/products");
       setProducts(productsPayload.data ?? []);
       toast({
