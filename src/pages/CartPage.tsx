@@ -13,9 +13,9 @@ const CartPage = () => {
         <div className="space-y-4 px-4 text-center">
           <h1 className="font-heading text-2xl font-semibold text-foreground sm:text-3xl">Your Cart is Empty</h1>
           <p className="text-sm text-muted-foreground">Add some products to get started.</p>
-          <Link to="/product">
+          <Link to="/shop">
             <Button className="gradient-rose text-xs uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 sm:text-sm sm:normal-case sm:tracking-normal">
-              Shop Now
+              Shop
             </Button>
           </Link>
         </div>
@@ -27,7 +27,7 @@ const CartPage = () => {
     <main className="pt-20 pb-16 sm:pt-24 sm:pb-20">
       <div className="container mx-auto max-w-3xl px-4 lg:px-8">
         <Link
-          to="/product"
+          to="/shop"
           className="mb-6 inline-flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground sm:mb-8 sm:text-sm"
         >
           <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />

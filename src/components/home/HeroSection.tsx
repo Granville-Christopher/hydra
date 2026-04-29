@@ -39,9 +39,9 @@ const HeroSection = () => (
           </div>
 
           <div className="flex flex-col gap-3 pt-2 min-[430px]:flex-row min-[430px]:flex-wrap sm:gap-4">
-            <Link to="/product" className="w-full min-[430px]:w-auto">
+            <Link to="/shop" className="w-full min-[430px]:w-auto">
               <Button size="lg" className="gradient-rose w-full px-6 text-xs tracking-[0.16em] text-primary-foreground transition-opacity hover:opacity-90 sm:px-8 sm:text-sm sm:tracking-wide">
-                Shop Now - $28
+                Shop
               </Button>
             </Link>
             <Link to="/about" className="w-full min-[430px]:w-auto">

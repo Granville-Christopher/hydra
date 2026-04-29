@@ -23,6 +23,9 @@ const CartDrawer = () => {
             <div className="flex-1 space-y-4 overflow-y-auto py-4">
               {items.map((item) => (
                 <div key={item.id} className="flex gap-3 rounded-lg bg-card p-3 sm:gap-4 sm:p-4">
+                  {item.imageUrl && (
+                    <img src={item.imageUrl} alt="" className="h-16 w-16 rounded-md object-cover" />
+                  )}
                   <div className="flex-1">
                     <p className="text-xs font-medium text-foreground sm:text-sm">{item.name}</p>
                     <p className="mt-1 text-xs font-semibold text-primary sm:text-sm">${item.price}</p>

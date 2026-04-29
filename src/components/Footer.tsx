@@ -17,8 +17,11 @@ const Footer = () => (
         <div>
           <h4 className="mb-3 font-heading text-xs font-semibold uppercase tracking-[0.16em] text-foreground sm:mb-4 sm:text-sm sm:normal-case sm:tracking-normal">Shop</h4>
           <div className="space-y-2">
-            <Link to="/product" className="block text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm">
-              Moisturizer
+            <Link to="/shop" className="block text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm">
+              Shop
+            </Link>
+            <Link to="/single-product" className="block text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm">
+              Product Single Page
             </Link>
             <Link to="/about" className="block text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm">
               Our Story

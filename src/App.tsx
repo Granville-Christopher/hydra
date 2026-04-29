@@ -12,6 +12,7 @@ import MobileStickyCTA from "@/components/MobileStickyCTA";
 
 const Index = lazy(() => import("./pages/Index"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
+const ShopPage = lazy(() => import("./pages/ShopPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const FAQPage = lazy(() => import("./pages/FAQPage"));
@@ -45,6 +46,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/product" element={<ProductPage />} />
+              <Route path="/single-product" element={<ProductPage />} />
+              <Route path="/shop" element={<ShopPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/faq" element={<FAQPage />} />

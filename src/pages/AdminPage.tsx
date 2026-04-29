@@ -93,6 +93,22 @@ type CjCredentialsState = {
 
 type CredentialFormState = Record<CredentialFieldKey, string>;
 
+type AdminProduct = {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+  sku?: string;
+  cjProductId?: string;
+  cjVariantId?: string;
+  variantName?: string;
+  variantColor?: string;
+  retailPrice?: number;
+  productCost?: number;
+  inventory?: number;
+  selectedForShop?: boolean;
+  status?: string;
+};
+
 const defaultSettings: AdminSettings = {
   cjProductName: "Winning Product Placeholder",
   cjProductId: "CJ-PRODUCT-001",
@@ -224,6 +240,7 @@ const AdminPage = () => {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authForm, setAuthForm] = useState<AuthFormState>(emptyAuthForm);
   const [cjCredentials, setCjCredentials] = useState<CjCredentialsState | null>(null);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [credentialForm, setCredentialForm] = useState<CredentialFormState>(emptyCredentialForm);
   const [authLoading, setAuthLoading] = useState(true);
   const [authSubmitting, setAuthSubmitting] = useState(false);
@@ -231,6 +248,7 @@ const AdminPage = () => {
   const [credentialsSaving, setCredentialsSaving] = useState(false);
   const [connectionLoading, setConnectionLoading] = useState(false);
   const [cjImportLoading, setCjImportLoading] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(false);
 
   const apiRequest = async (
     path: string,
@@ -263,13 +281,15 @@ const AdminPage = () => {
   };
 
   const loadProtectedData = async (authTokenOverride?: string) => {
-    const [settingsPayload, credentialsPayload] = await Promise.all([
+    const [settingsPayload, credentialsPayload, productsPayload] = await Promise.all([
       apiRequest("/admin/settings", {}, true, authTokenOverride),
       apiRequest("/cj/credentials", {}, true, authTokenOverride),
+      apiRequest("/products", {}, true, authTokenOverride),
     ]);
 
     setSettings({ ...defaultSettings, ...settingsPayload.data });
     setCjCredentials(credentialsPayload.data);
+    setProducts(productsPayload.data ?? []);
   };
 
   useEffect(() => {
@@ -544,6 +564,8 @@ const AdminPage = () => {
       });
 
       setSettings({ ...defaultSettings, ...payload.data.settings });
+      const productsPayload = await apiRequest("/products");
+      setProducts(productsPayload.data ?? []);
       toast({
         title: "CJ product imported",
         description: "Product ID, variant ID, SKU, color, image, inventory, and supplier details were pulled from CJ.",
@@ -555,6 +577,58 @@ const AdminPage = () => {
       });
     } finally {
       setCjImportLoading(false);
+    }
+  };
+
+  const handleImportCjCatalog = async () => {
+    setCatalogLoading(true);
+
+    try {
+      const payload = await apiRequest("/cj/products/import-catalog", {
+        method: "POST",
+        body: JSON.stringify({
+          keyword: settings.cjProductName === defaultSettings.cjProductName ? "" : settings.cjProductName,
+          pageNum: 1,
+          pageSize: 20,
+        }),
+      });
+      const productsPayload = await apiRequest("/products");
+      setProducts(productsPayload.data ?? []);
+      toast({
+        title: "CJ catalog imported",
+        description: `${payload.data.importedCount ?? 0} CJ products were added to the admin catalog.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Catalog import failed",
+        description: error instanceof Error ? error.message : "Please connect your CJ API and try again.",
+      });
+    } finally {
+      setCatalogLoading(false);
+    }
+  };
+
+  const handleSelectShopProduct = async (product: AdminProduct) => {
+    try {
+      const payload = await apiRequest(`/products/${product._id}/select-for-shop`, {
+        method: "POST",
+      });
+      setProducts((current) =>
+        current.map((item) => ({
+          ...item,
+          selectedForShop: item._id === payload.data._id,
+          status: item._id === payload.data._id ? "active" : item.status,
+        })),
+      );
+      toast({
+        title: "Shop product selected",
+        description: `${payload.data.name} will now appear on the shop page.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Selection failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
     }
   };
 
@@ -1190,6 +1264,65 @@ const AdminPage = () => {
                 </Card>
 
                 <div className="space-y-5">
+                  <Card className="shadow-card">
+                    <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <CardTitle className="text-xl sm:text-2xl">CJ product catalog</CardTitle>
+                        <CardDescription>
+                          Import CJ products into this dashboard, then choose the one that should appear on the shop page.
+                        </CardDescription>
+                      </div>
+                      <Button variant="outline" onClick={handleImportCjCatalog} disabled={catalogLoading}>
+                        <RefreshCw className={`h-4 w-4 ${catalogLoading ? "animate-spin" : ""}`} />
+                        {catalogLoading ? "Syncing" : "Sync CJ products"}
+                      </Button>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {products.length === 0 ? (
+                        <div className="rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
+                          No CJ products imported yet. Connect the CJ API, then sync products.
+                        </div>
+                      ) : (
+                        products.map((product) => (
+                          <div
+                            key={product._id}
+                            className="flex flex-col gap-3 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center"
+                          >
+                            {product.imageUrl ? (
+                              <img src={product.imageUrl} alt="" className="h-16 w-16 rounded-md object-cover" />
+                            ) : (
+                              <div className="flex h-16 w-16 items-center justify-center rounded-md bg-card text-xs text-muted-foreground">
+                                No image
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {[product.sku, product.variantName, product.variantColor].filter(Boolean).join(" / ") || "CJ product"}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Product ID: {product.cjProductId || "Pending"} | Variant ID: {product.cjVariantId || "Pending"}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
+                              <Badge variant={product.selectedForShop ? "default" : "outline"}>
+                                {product.selectedForShop ? "In shop" : product.status ?? "synced"}
+                              </Badge>
+                              <Button
+                                size="sm"
+                                variant={product.selectedForShop ? "outline" : "default"}
+                                onClick={() => void handleSelectShopProduct(product)}
+                                disabled={Boolean(product.selectedForShop)}
+                              >
+                                {product.selectedForShop ? "Selected" : "Put in shop"}
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </CardContent>
+                  </Card>
+
                   <Card className="shadow-card">
                     <CardHeader>
                       <CardTitle className="text-xl sm:text-2xl">Secure CJ credentials</CardTitle>

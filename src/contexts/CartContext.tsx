@@ -5,12 +5,14 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  variant: "single" | "bundle";
+  variant: "single" | "bundle" | "cj";
+  imageUrl?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
   addItem: (variant: "single" | "bundle") => void;
+  addProductItem: (product: { id: string; name: string; price: number; imageUrl?: string }) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -43,6 +45,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setIsOpen(true);
   }, []);
 
+  const addProductItem = useCallback((product: { id: string; name: string; price: number; imageUrl?: string }) => {
+    setItems((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        return prev.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...product, variant: "cj", quantity: 1 }];
+    });
+    setIsOpen(true);
+  }, []);
+
   const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
@@ -61,7 +74,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, isOpen, setIsOpen }}>
+    <CartContext.Provider value={{ items, addItem, addProductItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, isOpen, setIsOpen }}>
       {children}
     </CartContext.Provider>
   );
