@@ -96,7 +96,9 @@ type CredentialFormState = Record<CredentialFieldKey, string>;
 type AdminProduct = {
   _id: string;
   name: string;
+  description?: string;
   imageUrl?: string;
+  productUrl?: string;
   sku?: string;
   cjProductId?: string;
   cjVariantId?: string;
@@ -104,9 +106,22 @@ type AdminProduct = {
   variantColor?: string;
   retailPrice?: number;
   productCost?: number;
+  shippingCost?: number;
   inventory?: number;
+  supplierName?: string;
+  warehouse?: string;
   selectedForShop?: boolean;
   status?: string;
+};
+
+type ProductDraft = {
+  name: string;
+  description: string;
+  imageUrl: string;
+  retailPrice: string;
+  productCost: string;
+  shippingCost: string;
+  inventory: string;
 };
 
 const defaultSettings: AdminSettings = {
@@ -232,6 +247,26 @@ const formatMoney = (value: number) => `$${value.toFixed(2)}`;
 const formatDate = (value: string | null) =>
   value ? new Date(value).toLocaleString() : "Not yet";
 
+const buildProductDraft = (product: AdminProduct): ProductDraft => ({
+  name: product.name ?? "",
+  description: product.description ?? "",
+  imageUrl: product.imageUrl ?? "",
+  retailPrice: String(product.retailPrice ?? ""),
+  productCost: String(product.productCost ?? ""),
+  shippingCost: String(product.shippingCost ?? ""),
+  inventory: String(product.inventory ?? ""),
+});
+
+const parseOptionalNumber = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return 0;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const AdminPage = () => {
   const [settings, setSettings] = useState<AdminSettings>(defaultSettings);
   const [admin, setAdmin] = useState<AdminProfile | null>(null);
@@ -241,6 +276,9 @@ const AdminPage = () => {
   const [authForm, setAuthForm] = useState<AuthFormState>(emptyAuthForm);
   const [cjCredentials, setCjCredentials] = useState<CjCredentialsState | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [productDraft, setProductDraft] = useState<ProductDraft | null>(null);
+  const [productSavingId, setProductSavingId] = useState<string | null>(null);
   const [credentialForm, setCredentialForm] = useState<CredentialFormState>(emptyCredentialForm);
   const [authLoading, setAuthLoading] = useState(true);
   const [authSubmitting, setAuthSubmitting] = useState(false);
@@ -598,7 +636,8 @@ const AdminPage = () => {
         body: JSON.stringify({
           keyword: settings.cjProductName === defaultSettings.cjProductName ? "" : settings.cjProductName,
           pageNum: 1,
-          pageSize: 20,
+          pageSize: 50,
+          pages: 10,
         }),
       });
       const productsPayload = await apiRequest("/products");
@@ -614,6 +653,74 @@ const AdminPage = () => {
       });
     } finally {
       setCatalogLoading(false);
+    }
+  };
+
+  const handleEditProduct = (product: AdminProduct) => {
+    setEditingProductId(product._id);
+    setProductDraft(buildProductDraft(product));
+  };
+
+  const handleCancelProductEdit = () => {
+    setEditingProductId(null);
+    setProductDraft(null);
+  };
+
+  const updateProductDraft = (field: keyof ProductDraft, value: string) => {
+    setProductDraft((current) => (current ? { ...current, [field]: value } : current));
+  };
+
+  const addHydraShieldToProductName = () => {
+    setProductDraft((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const hasBrand = current.name.toLowerCase().includes("hydrashield");
+      return {
+        ...current,
+        name: hasBrand ? current.name : `HydraShield ${current.name}`.trim(),
+      };
+    });
+  };
+
+  const handleSaveProduct = async (product: AdminProduct) => {
+    if (!productDraft) {
+      return;
+    }
+
+    setProductSavingId(product._id);
+
+    try {
+      const payload = await apiRequest(`/products/${product._id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: productDraft.name.trim() || product.name,
+          description: productDraft.description,
+          imageUrl: productDraft.imageUrl,
+          retailPrice: parseOptionalNumber(productDraft.retailPrice),
+          productCost: parseOptionalNumber(productDraft.productCost),
+          shippingCost: parseOptionalNumber(productDraft.shippingCost),
+          inventory: parseOptionalNumber(productDraft.inventory),
+        }),
+      });
+
+      setProducts((current) =>
+        current.map((item) => (item._id === payload.data._id ? payload.data : item)),
+      );
+      setEditingProductId(null);
+      setProductDraft(null);
+      toast({
+        title: "Product details saved",
+        description: `${payload.data.name} is ready to use in the shop.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Product save failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setProductSavingId(null);
     }
   };
 
@@ -1292,42 +1399,149 @@ const AdminPage = () => {
                           No CJ products imported yet. Connect the CJ API, then sync products.
                         </div>
                       ) : (
-                        products.map((product) => (
-                          <div
-                            key={product._id}
-                            className="flex flex-col gap-3 rounded-xl border border-border bg-background p-3 sm:flex-row sm:items-center"
-                          >
-                            {product.imageUrl ? (
-                              <img src={product.imageUrl} alt="" className="h-16 w-16 rounded-md object-cover" />
-                            ) : (
-                              <div className="flex h-16 w-16 items-center justify-center rounded-md bg-card text-xs text-muted-foreground">
-                                No image
+                        products.map((product) => {
+                          const isEditing = editingProductId === product._id;
+                          const draft = isEditing ? productDraft : null;
+
+                          return (
+                            <div key={product._id} className="rounded-xl border border-border bg-background p-3">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                {product.imageUrl ? (
+                                  <img src={product.imageUrl} alt="" className="h-16 w-16 rounded-md object-cover" />
+                                ) : (
+                                  <div className="flex h-16 w-16 items-center justify-center rounded-md bg-card text-xs text-muted-foreground">
+                                    No image
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {[product.sku, product.variantName, product.variantColor].filter(Boolean).join(" / ") || "CJ product"}
+                                  </p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Product ID: {product.cjProductId || "Pending"} | Variant ID: {product.cjVariantId || "Pending"}
+                                  </p>
+                                  <p className="mt-1 text-xs font-medium text-foreground">
+                                    Shop price: {formatMoney(Number(product.retailPrice || product.productCost || 0))}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                                  <Badge variant={product.selectedForShop ? "default" : "outline"}>
+                                    {product.selectedForShop ? "In shop" : product.status ?? "synced"}
+                                  </Badge>
+                                  <Button size="sm" variant="outline" onClick={() => handleEditProduct(product)}>
+                                    Edit details
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={product.selectedForShop ? "outline" : "default"}
+                                    onClick={() => void handleSelectShopProduct(product)}
+                                    disabled={Boolean(product.selectedForShop)}
+                                  >
+                                    {product.selectedForShop ? "Selected" : "Put in shop"}
+                                  </Button>
+                                </div>
                               </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {[product.sku, product.variantName, product.variantColor].filter(Boolean).join(" / ") || "CJ product"}
-                              </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Product ID: {product.cjProductId || "Pending"} | Variant ID: {product.cjVariantId || "Pending"}
-                              </p>
+
+                              {draft && (
+                                <div className="mt-4 grid gap-3 border-t border-border pt-4 md:grid-cols-2">
+                                  <div className="md:col-span-2">
+                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                      Storefront product name
+                                    </label>
+                                    <div className="flex flex-col gap-2 sm:flex-row">
+                                      <Input
+                                        value={draft.name}
+                                        onChange={(event) => updateProductDraft("name", event.target.value)}
+                                      />
+                                      <Button type="button" variant="outline" onClick={addHydraShieldToProductName}>
+                                        Add HydraShield
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                      Selling price customers see
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={draft.retailPrice}
+                                      onChange={(event) => updateProductDraft("retailPrice", event.target.value)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                      Product cost
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={draft.productCost}
+                                      onChange={(event) => updateProductDraft("productCost", event.target.value)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                      Shipping cost
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={draft.shippingCost}
+                                      onChange={(event) => updateProductDraft("shippingCost", event.target.value)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                      Inventory
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={draft.inventory}
+                                      onChange={(event) => updateProductDraft("inventory", event.target.value)}
+                                    />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                      Image URL
+                                    </label>
+                                    <Input
+                                      value={draft.imageUrl}
+                                      onChange={(event) => updateProductDraft("imageUrl", event.target.value)}
+                                    />
+                                  </div>
+                                  <div className="md:col-span-2">
+                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                      Storefront description
+                                    </label>
+                                    <Textarea
+                                      value={draft.description}
+                                      onChange={(event) => updateProductDraft("description", event.target.value)}
+                                    />
+                                  </div>
+                                  <div className="flex flex-wrap gap-2 md:col-span-2">
+                                    <Button
+                                      type="button"
+                                      onClick={() => void handleSaveProduct(product)}
+                                      disabled={productSavingId === product._id}
+                                    >
+                                      {productSavingId === product._id ? "Saving" : "Save product details"}
+                                    </Button>
+                                    <Button type="button" variant="outline" onClick={handleCancelProductEdit}>
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
-                              <Badge variant={product.selectedForShop ? "default" : "outline"}>
-                                {product.selectedForShop ? "In shop" : product.status ?? "synced"}
-                              </Badge>
-                              <Button
-                                size="sm"
-                                variant={product.selectedForShop ? "outline" : "default"}
-                                onClick={() => void handleSelectShopProduct(product)}
-                                disabled={Boolean(product.selectedForShop)}
-                              >
-                                {product.selectedForShop ? "Selected" : "Put in shop"}
-                              </Button>
-                            </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </CardContent>
                   </Card>
