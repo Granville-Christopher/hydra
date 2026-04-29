@@ -14,9 +14,11 @@ import {
   Truck,
   UserRound,
 } from "lucide-react";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -159,6 +161,33 @@ const sampleOrders = [
   },
 ];
 
+const revenueTrend = [
+  { month: "Jan", revenue: 420, orders: 15 },
+  { month: "Feb", revenue: 612, orders: 22 },
+  { month: "Mar", revenue: 756, orders: 27 },
+  { month: "Apr", revenue: 1008, orders: 36 },
+  { month: "May", revenue: 1456, orders: 52 },
+  { month: "Jun", revenue: 1848, orders: 66 },
+];
+
+const revenueChartConfig = {
+  revenue: {
+    label: "Revenue",
+    color: "hsl(var(--primary))",
+  },
+  orders: {
+    label: "Orders",
+    color: "hsl(var(--muted-foreground))",
+  },
+} satisfies ChartConfig;
+
+const costChartConfig = {
+  amount: {
+    label: "Amount",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
 const statusStyles: Record<string, string> = {
   "Ready to Source": "border-primary/30 bg-primary/10 text-primary",
   "Submitted to CJ": "border-amber-300 bg-amber-100 text-amber-800",
@@ -291,6 +320,13 @@ const AdminPage = () => {
   const readinessPercent = Math.round(
     (readinessChecks.filter(Boolean).length / readinessChecks.length) * 100,
   );
+  const costBreakdown = [
+    { name: "Product", amount: settings.productCost },
+    { name: "Shipping", amount: settings.shippingCost },
+    { name: "Ads", amount: settings.adCostPerOrder },
+    { name: "Packaging", amount: settings.packagingCost },
+    { name: "Profit", amount: Math.max(grossProfit, 0) },
+  ];
 
   const updateNumber = (field: keyof AdminSettings, value: string) => {
     const parsed = Number(value);
@@ -787,6 +823,101 @@ const AdminPage = () => {
                         Estimated profit per order: {formatMoney(grossProfit)}
                       </p>
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+                <Card className="shadow-card">
+                  <CardHeader>
+                    <CardTitle className="text-xl sm:text-2xl">Revenue trend</CardTitle>
+                    <CardDescription>
+                      A launch projection showing how sales momentum and order volume could scale month by month.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={revenueChartConfig} className="min-h-[260px] w-full">
+                      <AreaChart data={revenueTrend} margin={{ left: 4, right: 12, top: 8 }}>
+                        <defs>
+                          <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.34} />
+                            <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.04} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="month"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                        />
+                        <YAxis
+                          yAxisId="revenue"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          tickFormatter={(value) => `$${value}`}
+                        />
+                        <YAxis yAxisId="orders" orientation="right" hide />
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent indicator="dot" />}
+                        />
+                        <Area
+                          yAxisId="revenue"
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="var(--color-revenue)"
+                          fill="url(#revenueFill)"
+                          strokeWidth={2}
+                        />
+                        <Area
+                          yAxisId="orders"
+                          type="monotone"
+                          dataKey="orders"
+                          stroke="var(--color-orders)"
+                          fill="transparent"
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-card">
+                  <CardHeader>
+                    <CardTitle className="text-xl sm:text-2xl">Cost and profit mix</CardTitle>
+                    <CardDescription>
+                      Per-order economics based on the latest saved sourcing assumptions.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={costChartConfig} className="min-h-[260px] w-full">
+                      <BarChart data={costBreakdown} margin={{ left: 4, right: 12, top: 8 }}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="name"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          tickFormatter={(value) => `$${value}`}
+                        />
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent indicator="dot" />}
+                        />
+                        <Bar
+                          dataKey="amount"
+                          fill="var(--color-amount)"
+                          radius={[6, 6, 0, 0]}
+                        />
+                      </BarChart>
+                    </ChartContainer>
                   </CardContent>
                 </Card>
               </div>
