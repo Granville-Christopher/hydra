@@ -605,12 +605,18 @@ const AdminPage = () => {
         }),
       });
 
-      const importedSettings = payload?.data?.settings ?? payload?.settings ?? payload?.data;
-      if (!importedSettings) {
-        throw new Error("CJ import finished, but the backend response did not include updated settings.");
+      const importedSettings =
+        payload?.data?.settings ??
+        payload?.settings ??
+        (payload?.data?.cjProductId || payload?.data?.cjSku ? payload.data : null);
+      const settingsPayload = importedSettings ? null : await apiRequest("/admin/settings");
+      const nextSettings = importedSettings ?? settingsPayload?.data;
+
+      if (!nextSettings) {
+        throw new Error("CJ import finished, but updated settings could not be reloaded.");
       }
 
-      setSettings({ ...defaultSettings, ...importedSettings });
+      setSettings({ ...defaultSettings, ...nextSettings });
       const productsPayload = await apiRequest("/products");
       setProducts(productsPayload.data ?? []);
       toast({
