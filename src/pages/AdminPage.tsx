@@ -567,7 +567,7 @@ const AdminPage = () => {
         }),
       });
 
-      const importedSettings = payload?.data?.settings;
+      const importedSettings = payload?.data?.settings ?? payload?.settings ?? payload?.data;
       if (!importedSettings) {
         throw new Error("CJ import finished, but the backend response did not include updated settings.");
       }
@@ -577,7 +577,7 @@ const AdminPage = () => {
       setProducts(productsPayload.data ?? []);
       toast({
         title: "CJ product imported",
-        description: "Product ID, variant ID, SKU, color, image, inventory, and supplier details were pulled from CJ.",
+        description: "The imported product details are now shown in the CJ product import fields.",
       });
     } catch (error) {
       toast({
