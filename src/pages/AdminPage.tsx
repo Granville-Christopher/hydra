@@ -36,6 +36,7 @@ type AdminSettings = {
   cjProductUrl: string;
   cjSku: string;
   cjVariantName: string;
+  cjVariantColor: string;
   cjImageUrl: string;
   cjInventory: number;
   cjShippingMethod: string;
@@ -99,6 +100,7 @@ const defaultSettings: AdminSettings = {
   cjProductUrl: "",
   cjSku: "",
   cjVariantName: "",
+  cjVariantColor: "",
   cjImageUrl: "",
   cjInventory: 0,
   cjShippingMethod: "CJPacket",
@@ -228,6 +230,7 @@ const AdminPage = () => {
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [credentialsSaving, setCredentialsSaving] = useState(false);
   const [connectionLoading, setConnectionLoading] = useState(false);
+  const [cjImportLoading, setCjImportLoading] = useState(false);
 
   const apiRequest = async (
     path: string,
@@ -523,6 +526,35 @@ const AdminPage = () => {
       });
     } finally {
       setConnectionLoading(false);
+    }
+  };
+
+  const handleImportCjProduct = async () => {
+    setCjImportLoading(true);
+
+    try {
+      const payload = await apiRequest("/cj/products/import-settings", {
+        method: "POST",
+        body: JSON.stringify({
+          keyword: settings.cjProductName,
+          productId: settings.cjProductId,
+          variantId: settings.cjVariantId,
+          sku: settings.cjSku,
+        }),
+      });
+
+      setSettings({ ...defaultSettings, ...payload.data.settings });
+      toast({
+        title: "CJ product imported",
+        description: "Product ID, variant ID, SKU, color, image, inventory, and supplier details were pulled from CJ.",
+      });
+    } catch (error) {
+      toast({
+        title: "CJ import failed",
+        description: error instanceof Error ? error.message : "Please connect your CJ API and try again.",
+      });
+    } finally {
+      setCjImportLoading(false);
     }
   };
 
@@ -937,20 +969,32 @@ const AdminPage = () => {
             <TabsContent value="sourcing" className="space-y-5">
               <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
                 <Card className="shadow-card">
-                  <CardHeader>
-                    <CardTitle className="text-xl sm:text-2xl">Dropshipping product mapping</CardTitle>
-                    <CardDescription>
-                      Store the product identifiers, supplier details, and cost assumptions you will use for fulfillment.
-                    </CardDescription>
+                  <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <CardTitle className="text-xl sm:text-2xl">CJ product import</CardTitle>
+                      <CardDescription>
+                        Connect your CJ API, enter a product name or known CJ ID, then import the product and variant details from CJ.
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleImportCjProduct}
+                      disabled={cjImportLoading}
+                      className="shrink-0"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${cjImportLoading ? "animate-spin" : ""}`} />
+                      {cjImportLoading ? "Importing" : "Import from CJ"}
+                    </Button>
                   </CardHeader>
                   <CardContent className="grid gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                       <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Product name
+                        Search product name
                       </label>
                       <Input
                         value={settings.cjProductName}
                         onChange={(event) => updateText("cjProductName", event.target.value)}
+                        placeholder="Type the CJ product name to import"
                       />
                     </div>
                     <div>
@@ -960,6 +1004,7 @@ const AdminPage = () => {
                       <Input
                         value={settings.cjProductId}
                         onChange={(event) => updateText("cjProductId", event.target.value)}
+                        placeholder="Imported from CJ, or enter one to refresh"
                       />
                     </div>
                     <div>
@@ -969,6 +1014,7 @@ const AdminPage = () => {
                       <Input
                         value={settings.cjVariantId}
                         onChange={(event) => updateText("cjVariantId", event.target.value)}
+                        placeholder="Imported from CJ, or enter one to refresh"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -1001,6 +1047,16 @@ const AdminPage = () => {
                         placeholder="Color, size, bundle, or option name"
                       />
                     </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Variant color
+                      </label>
+                      <Input
+                        value={settings.cjVariantColor}
+                        onChange={(event) => updateText("cjVariantColor", event.target.value)}
+                        placeholder="Imported from CJ variant attributes"
+                      />
+                    </div>
                     <div className="sm:col-span-2">
                       <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         CJ image URL
@@ -1008,9 +1064,20 @@ const AdminPage = () => {
                       <Input
                         value={settings.cjImageUrl}
                         onChange={(event) => updateText("cjImageUrl", event.target.value)}
-                        placeholder="Main product image copied from CJ"
+                        placeholder="Imported product image from CJ"
                       />
                     </div>
+                    {settings.cjImageUrl && (
+                      <div className="sm:col-span-2">
+                        <div className="overflow-hidden rounded-xl border border-border bg-background">
+                          <img
+                            src={settings.cjImageUrl}
+                            alt={settings.cjProductName || "Imported CJ product"}
+                            className="h-52 w-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Supplier label
