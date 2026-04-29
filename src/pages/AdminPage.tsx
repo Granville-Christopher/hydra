@@ -621,7 +621,7 @@ const AdminPage = () => {
       setProducts(productsPayload.data ?? []);
       toast({
         title: "CJ product imported",
-        description: "The imported product details are now shown in the CJ product import fields.",
+        description: "The product was imported, saved to the catalog, and loaded into the edit fields.",
       });
     } catch (error) {
       toast({
@@ -631,6 +631,32 @@ const AdminPage = () => {
     } finally {
       setCjImportLoading(false);
     }
+  };
+
+  const handleLoadProductIntoSettings = (product: AdminProduct) => {
+    setSettings((current) => ({
+      ...current,
+      cjProductName: product.name ?? current.cjProductName,
+      cjProductId: product.cjProductId ?? current.cjProductId,
+      cjVariantId: product.cjVariantId ?? current.cjVariantId,
+      cjProductUrl: product.productUrl ?? current.cjProductUrl,
+      cjSku: product.sku ?? current.cjSku,
+      cjVariantName: product.variantName ?? current.cjVariantName,
+      cjVariantColor: product.variantColor ?? current.cjVariantColor,
+      cjImageUrl: product.imageUrl ?? current.cjImageUrl,
+      cjInventory: Number(product.inventory ?? current.cjInventory),
+      supplierName: product.supplierName ?? current.supplierName,
+      warehouse: product.warehouse ?? current.warehouse,
+      sellingPrice: Number(product.retailPrice || current.sellingPrice),
+      productCost: Number(product.productCost || current.productCost),
+      shippingCost: Number(product.shippingCost || current.shippingCost),
+    }));
+
+    handleEditProduct(product);
+    toast({
+      title: "Product loaded for editing",
+      description: `${product.name} is now loaded into the CJ import fields and catalog editor.`,
+    });
   };
 
   const handleImportCjCatalog = async () => {
@@ -1391,7 +1417,7 @@ const AdminPage = () => {
                       <div>
                         <CardTitle className="text-xl sm:text-2xl">CJ product catalog</CardTitle>
                         <CardDescription>
-                          Import CJ products into this dashboard, then choose the one that should appear on the shop page.
+                          Sync CJ products here, click one to load its details into the edit fields, then set the selling price customers will see.
                         </CardDescription>
                       </div>
                       <Button variant="outline" onClick={handleImportCjCatalog} disabled={catalogLoading}>
@@ -1435,8 +1461,8 @@ const AdminPage = () => {
                                   <Badge variant={product.selectedForShop ? "default" : "outline"}>
                                     {product.selectedForShop ? "In shop" : product.status ?? "synced"}
                                   </Badge>
-                                  <Button size="sm" variant="outline" onClick={() => handleEditProduct(product)}>
-                                    Edit details
+                                  <Button size="sm" variant="outline" onClick={() => handleLoadProductIntoSettings(product)}>
+                                    Load & edit
                                   </Button>
                                   <Button
                                     size="sm"
