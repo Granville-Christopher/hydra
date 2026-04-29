@@ -33,6 +33,14 @@ type AdminSettings = {
   cjProductName: string;
   cjProductId: string;
   cjVariantId: string;
+  cjProductUrl: string;
+  cjSku: string;
+  cjVariantName: string;
+  cjImageUrl: string;
+  cjInventory: number;
+  cjShippingMethod: string;
+  cjEstimatedDelivery: string;
+  cjLastCheckedAt: string;
   supplierName: string;
   warehouse: string;
   sellingPrice: number;
@@ -88,6 +96,14 @@ const defaultSettings: AdminSettings = {
   cjProductName: "Winning Product Placeholder",
   cjProductId: "CJ-PRODUCT-001",
   cjVariantId: "CJ-PRODUCT-001-VARIANT",
+  cjProductUrl: "",
+  cjSku: "",
+  cjVariantName: "",
+  cjImageUrl: "",
+  cjInventory: 0,
+  cjShippingMethod: "CJPacket",
+  cjEstimatedDelivery: "7-15 days",
+  cjLastCheckedAt: "",
   supplierName: "Primary CJ Supplier",
   warehouse: "Best available warehouse",
   sellingPrice: 39,
@@ -955,6 +971,46 @@ const AdminPage = () => {
                         onChange={(event) => updateText("cjVariantId", event.target.value)}
                       />
                     </div>
+                    <div className="sm:col-span-2">
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        CJ product URL
+                      </label>
+                      <Input
+                        value={settings.cjProductUrl}
+                        onChange={(event) => updateText("cjProductUrl", event.target.value)}
+                        placeholder="Paste the CJ product page link"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Supplier SKU
+                      </label>
+                      <Input
+                        value={settings.cjSku}
+                        onChange={(event) => updateText("cjSku", event.target.value)}
+                        placeholder="SKU from CJ"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Variant name
+                      </label>
+                      <Input
+                        value={settings.cjVariantName}
+                        onChange={(event) => updateText("cjVariantName", event.target.value)}
+                        placeholder="Color, size, bundle, or option name"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        CJ image URL
+                      </label>
+                      <Input
+                        value={settings.cjImageUrl}
+                        onChange={(event) => updateText("cjImageUrl", event.target.value)}
+                        placeholder="Main product image copied from CJ"
+                      />
+                    </div>
                     <div>
                       <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Supplier label
@@ -971,6 +1027,46 @@ const AdminPage = () => {
                       <Input
                         value={settings.warehouse}
                         onChange={(event) => updateText("warehouse", event.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        CJ inventory
+                      </label>
+                      <Input
+                        type="number"
+                        value={settings.cjInventory}
+                        onChange={(event) => updateNumber("cjInventory", event.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Shipping method
+                      </label>
+                      <Input
+                        value={settings.cjShippingMethod}
+                        onChange={(event) => updateText("cjShippingMethod", event.target.value)}
+                        placeholder="CJPacket, USPS, DHL, etc."
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Estimated delivery
+                      </label>
+                      <Input
+                        value={settings.cjEstimatedDelivery}
+                        onChange={(event) => updateText("cjEstimatedDelivery", event.target.value)}
+                        placeholder="Example: 7-15 days"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Last checked in CJ
+                      </label>
+                      <Input
+                        value={settings.cjLastCheckedAt}
+                        onChange={(event) => updateText("cjLastCheckedAt", event.target.value)}
+                        placeholder="Example: 2026-04-29"
                       />
                     </div>
                     <div>
