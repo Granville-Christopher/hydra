@@ -285,7 +285,6 @@ const AdminPage = () => {
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [credentialsSaving, setCredentialsSaving] = useState(false);
   const [connectionLoading, setConnectionLoading] = useState(false);
-  const [cjImportLoading, setCjImportLoading] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
 
   const apiRequest = async (
@@ -588,48 +587,6 @@ const AdminPage = () => {
       });
     } finally {
       setConnectionLoading(false);
-    }
-  };
-
-  const handleImportCjProduct = async () => {
-    setCjImportLoading(true);
-
-    try {
-      const payload = await apiRequest("/cj/products/import-settings", {
-        method: "POST",
-        body: JSON.stringify({
-          keyword: settings.cjProductName,
-          productId: settings.cjProductId,
-          variantId: settings.cjVariantId,
-          sku: settings.cjSku,
-        }),
-      });
-
-      const importedSettings =
-        payload?.data?.settings ??
-        payload?.settings ??
-        (payload?.data?.cjProductId || payload?.data?.cjSku ? payload.data : null);
-      const settingsPayload = importedSettings ? null : await apiRequest("/admin/settings");
-      const nextSettings = importedSettings ?? settingsPayload?.data;
-
-      if (!nextSettings) {
-        throw new Error("CJ import finished, but updated settings could not be reloaded.");
-      }
-
-      setSettings({ ...defaultSettings, ...nextSettings });
-      const productsPayload = await apiRequest("/products");
-      setProducts(productsPayload.data ?? []);
-      toast({
-        title: "CJ product imported",
-        description: "The product was imported, saved to the catalog, and loaded into the edit fields.",
-      });
-    } catch (error) {
-      toast({
-        title: "CJ import failed",
-        description: error instanceof Error ? error.message : "Please connect your CJ API and try again.",
-      });
-    } finally {
-      setCjImportLoading(false);
     }
   };
 
@@ -1191,22 +1148,13 @@ const AdminPage = () => {
             <TabsContent value="sourcing" className="space-y-5">
               <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
                 <Card className="shadow-card">
-                  <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <CardHeader>
                     <div>
                       <CardTitle className="text-xl sm:text-2xl">CJ product import</CardTitle>
                       <CardDescription>
-                        Connect your CJ API, enter a product name or known CJ ID, then import the product and variant details from CJ.
+                        Select a product from the CJ product catalog below to load its details here, then edit the shop-facing fields.
                       </CardDescription>
                     </div>
-                    <Button
-                      variant="outline"
-                      onClick={handleImportCjProduct}
-                      disabled={cjImportLoading}
-                      className="shrink-0"
-                    >
-                      <RefreshCw className={`h-4 w-4 ${cjImportLoading ? "animate-spin" : ""}`} />
-                      {cjImportLoading ? "Importing" : "Import from CJ"}
-                    </Button>
                   </CardHeader>
                   <CardContent className="grid gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
@@ -1417,7 +1365,7 @@ const AdminPage = () => {
                       <div>
                         <CardTitle className="text-xl sm:text-2xl">CJ product catalog</CardTitle>
                         <CardDescription>
-                          Sync CJ products here, click one to load its details into the edit fields, then set the selling price customers will see.
+                          Sync CJ products here. Every imported product appears in this catalog; click Load & edit on one product to fill the edit fields.
                         </CardDescription>
                       </div>
                       <Button variant="outline" onClick={handleImportCjCatalog} disabled={catalogLoading}>
@@ -1428,7 +1376,7 @@ const AdminPage = () => {
                     <CardContent className="space-y-3">
                       {products.length === 0 ? (
                         <div className="rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
-                          No CJ products imported yet. Connect the CJ API, then sync products.
+                          No CJ products in the catalog yet. Connect the CJ API, then click Sync CJ products here.
                         </div>
                       ) : (
                         products.map((product) => {
