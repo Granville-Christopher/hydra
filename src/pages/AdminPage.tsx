@@ -39,7 +39,6 @@ type AdminSettings = {
   productCost: number;
   shippingCost: number;
   adCostPerOrder: number;
-  packagingCost: number;
   processingDays: number;
   autoImportTracking: boolean;
   autoSyncInventory: boolean;
@@ -86,23 +85,22 @@ type CjCredentialsState = {
 type CredentialFormState = Record<CredentialFieldKey, string>;
 
 const defaultSettings: AdminSettings = {
-  cjProductName: "HydraShield Daily Barrier Repair Moisturizer",
-  cjProductId: "CJ-HYDRA-001",
-  cjVariantId: "CJ-HYDRA-001-50ML",
-  supplierName: "CJ Dropshipping Supplier",
-  warehouse: "US Warehouse",
-  sellingPrice: 28,
-  productCost: 8.5,
-  shippingCost: 4.75,
-  adCostPerOrder: 6.5,
-  packagingCost: 1.25,
+  cjProductName: "Winning Product Placeholder",
+  cjProductId: "CJ-PRODUCT-001",
+  cjVariantId: "CJ-PRODUCT-001-VARIANT",
+  supplierName: "Primary CJ Supplier",
+  warehouse: "Best available warehouse",
+  sellingPrice: 39,
+  productCost: 12,
+  shippingCost: 5,
+  adCostPerOrder: 8,
   processingDays: 3,
   autoImportTracking: true,
   autoSyncInventory: true,
   lowStockAlerts: true,
   orderAutoConfirm: false,
   notes:
-    "Use CJ US stock first for faster delivery. Keep bundle packaging instructions ready before launch and verify branded insert requirements.",
+    "Use the fastest reliable warehouse first, confirm supplier stock before scaling ads, and keep a backup product or supplier ready.",
 };
 
 const emptyAuthForm: AuthFormState = {
@@ -120,8 +118,8 @@ const emptyCredentialForm: CredentialFormState = {
 
 const sourcingChecklist = [
   "Confirm final CJ product page and saved product ID",
-  "Validate US warehouse stock and backup warehouse option",
-  "Approve branded packaging or insert strategy",
+  "Validate warehouse stock and backup supplier option",
+  "Confirm product margin before increasing ad spend",
   "Lock landed cost before paid traffic goes live",
   "Test one real order before launch day",
 ];
@@ -130,7 +128,7 @@ const sampleOrders = [
   {
     id: "#HS-1024",
     customer: "Ava Johnson",
-    product: "Single Jar",
+    product: "Test Product A",
     status: "Ready to Source",
     total: "$28.00",
     tracking: "Pending",
@@ -138,7 +136,7 @@ const sampleOrders = [
   {
     id: "#HS-1023",
     customer: "Noah Smith",
-    product: "2 Jar Bundle",
+    product: "Bundle Offer",
     status: "Submitted to CJ",
     total: "$52.00",
     tracking: "Awaiting sync",
@@ -146,7 +144,7 @@ const sampleOrders = [
   {
     id: "#HS-1022",
     customer: "Emma Brown",
-    product: "Single Jar",
+    product: "Test Product B",
     status: "In Fulfillment",
     total: "$28.00",
     tracking: "CJUS984221",
@@ -154,7 +152,7 @@ const sampleOrders = [
   {
     id: "#HS-1021",
     customer: "Liam Davis",
-    product: "2 Jar Bundle",
+    product: "Bundle Offer",
     status: "Delivered",
     total: "$52.00",
     tracking: "CJUS983915",
@@ -305,8 +303,7 @@ const AdminPage = () => {
     void restoreSession();
   }, [token]);
 
-  const totalLandedCost =
-    settings.productCost + settings.shippingCost + settings.adCostPerOrder + settings.packagingCost;
+  const totalLandedCost = settings.productCost + settings.shippingCost + settings.adCostPerOrder;
   const grossProfit = settings.sellingPrice - totalLandedCost;
   const marginPercent = settings.sellingPrice > 0 ? (grossProfit / settings.sellingPrice) * 100 : 0;
   const readinessChecks = [
@@ -324,7 +321,6 @@ const AdminPage = () => {
     { name: "Product", amount: settings.productCost },
     { name: "Shipping", amount: settings.shippingCost },
     { name: "Ads", amount: settings.adCostPerOrder },
-    { name: "Packaging", amount: settings.packagingCost },
     { name: "Profit", amount: Math.max(grossProfit, 0) },
   ];
 
@@ -366,7 +362,7 @@ const AdminPage = () => {
         description:
           authMode === "register"
             ? "Your admin account is ready and further registration is now locked."
-            : "You are logged in to HydraShield admin.",
+            : "You are logged in to the HydraShield dropshipping admin.",
       });
     } catch (error) {
       toast({
@@ -592,7 +588,7 @@ const AdminPage = () => {
                           onChange={(event) =>
                             setAuthForm((current) => ({ ...current, fullName: event.target.value }))
                           }
-                          placeholder="HydraShield owner"
+                          placeholder="Store owner"
                         />
                       </div>
                     )}
@@ -606,7 +602,7 @@ const AdminPage = () => {
                         onChange={(event) =>
                           setAuthForm((current) => ({ ...current, email: event.target.value }))
                         }
-                        placeholder="owner@hydrashield.com"
+                        placeholder="owner@example.com"
                       />
                     </div>
                     <div>
@@ -659,13 +655,13 @@ const AdminPage = () => {
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary sm:text-sm">
-                    HydraShield Operations
+                    HydraShield Dropshipping
                   </p>
                   <h1 className="mt-2 font-heading text-2xl font-semibold text-foreground sm:text-3xl lg:text-4xl">
-                    Run sourcing, pricing, credentials, and fulfillment from one place
+                    Run products, pricing, supplier credentials, and fulfillment from one place
                   </h1>
                   <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                    Your admin account is now the gatekeeper for this dashboard. CJ secrets are stored securely in the database and only exposed here as masked values so you can replace or clear them without putting them back into env files.
+                    Manage a general dropshipping operation from one dashboard. CJ secrets are stored securely in the database and only exposed here as masked values so you can replace or clear them without putting them back into env files.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3">
@@ -675,7 +671,7 @@ const AdminPage = () => {
                   <div>
                     <p className="text-sm font-medium text-foreground">{admin.fullName}</p>
                     <p className="text-xs text-muted-foreground">
-                      {admin.email} · Last login {formatDate(admin.lastLoginAt)}
+                      {admin.email} - Last login {formatDate(admin.lastLoginAt)}
                     </p>
                   </div>
                 </div>
@@ -714,7 +710,7 @@ const AdminPage = () => {
                 icon: Truck,
                 label: "Landed Cost",
                 value: formatMoney(totalLandedCost),
-                note: "Product, shipping, ads, packaging",
+                note: "Product, shipping, ads",
               },
               {
                 icon: ShoppingBag,
@@ -807,7 +803,6 @@ const AdminPage = () => {
                       ["Product cost", formatMoney(settings.productCost)],
                       ["Shipping cost", formatMoney(settings.shippingCost)],
                       ["Ad cost/order", formatMoney(settings.adCostPerOrder)],
-                      ["Packaging", formatMoney(settings.packagingCost)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex items-center justify-between border-b border-border pb-3 text-sm">
                         <span className="text-muted-foreground">{label}</span>
@@ -888,7 +883,7 @@ const AdminPage = () => {
                   <CardHeader>
                     <CardTitle className="text-xl sm:text-2xl">Cost and profit mix</CardTitle>
                     <CardDescription>
-                      Per-order economics based on the latest saved sourcing assumptions.
+                      Per-order economics based on the latest saved supplier and ad assumptions.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -927,9 +922,9 @@ const AdminPage = () => {
               <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
                 <Card className="shadow-card">
                   <CardHeader>
-                    <CardTitle className="text-xl sm:text-2xl">CJ product mapping</CardTitle>
+                    <CardTitle className="text-xl sm:text-2xl">Dropshipping product mapping</CardTitle>
                     <CardDescription>
-                      Store the identifiers and cost assumptions you will use when you connect CJ for real.
+                      Store the product identifiers, supplier details, and cost assumptions you will use for fulfillment.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -1006,16 +1001,6 @@ const AdminPage = () => {
                         type="number"
                         value={settings.shippingCost}
                         onChange={(event) => updateNumber("shippingCost", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Packaging cost
-                      </label>
-                      <Input
-                        type="number"
-                        value={settings.packagingCost}
-                        onChange={(event) => updateNumber("packagingCost", event.target.value)}
                       />
                     </div>
                     <div>
@@ -1138,7 +1123,7 @@ const AdminPage = () => {
                     <CardHeader>
                       <CardTitle className="text-xl sm:text-2xl">Sourcing notes</CardTitle>
                       <CardDescription>
-                        Keep operational notes for suppliers, packaging, backup warehouses, and launch prep.
+                        Keep operational notes for suppliers, backup warehouses, fulfillment rules, and launch prep.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -1259,7 +1244,7 @@ const AdminPage = () => {
                   <CardHeader>
                     <CardTitle className="text-xl sm:text-2xl">Fulfillment flow</CardTitle>
                     <CardDescription>
-                      Suggested operating flow while HydraShield is sourcing through CJ dropshipping.
+                      Suggested operating flow for a supplier-backed dropshipping store.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-4">
