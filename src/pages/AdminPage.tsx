@@ -61,6 +61,8 @@ type AdminSettings = {
   lowStockAlerts: boolean;
   orderAutoConfirm: boolean;
   notes: string;
+  paystackPublicKey: string;
+  paystackSecretKey: string;
 };
 
 type AdminProfile = {
@@ -157,6 +159,8 @@ const defaultSettings: AdminSettings = {
   orderAutoConfirm: false,
   notes:
     "Use the fastest reliable warehouse first, confirm supplier stock before scaling ads, and keep a backup product or supplier ready.",
+  paystackPublicKey: "",
+  paystackSecretKey: "",
 };
 
 const emptyAuthForm: AuthFormState = {
@@ -1056,6 +1060,9 @@ const AdminPage = () => {
               <TabsTrigger value="operations" className="text-xs sm:text-sm">
                 Operations
               </TabsTrigger>
+              <TabsTrigger value="payments" className="text-xs sm:text-sm">
+                Payments
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-5">
@@ -1818,6 +1825,40 @@ const AdminPage = () => {
                     <KeyRound className="h-4 w-4" />
                     Refresh access token
                   </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="payments" className="space-y-5">
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="text-xl sm:text-2xl">Paystack Settings</CardTitle>
+                  <CardDescription>
+                    Configure your Paystack public and secret keys for accepting payments.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 max-w-md">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      Public Key
+                    </label>
+                    <Input
+                      value={settings.paystackPublicKey}
+                      onChange={(event) => updateText("paystackPublicKey", event.target.value)}
+                      placeholder="pk_test_..."
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      Secret Key
+                    </label>
+                    <Input
+                      type="password"
+                      value={settings.paystackSecretKey}
+                      onChange={(event) => updateText("paystackSecretKey", event.target.value)}
+                      placeholder="sk_test_..."
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
