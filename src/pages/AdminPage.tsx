@@ -254,9 +254,29 @@ const formatMoney = (value: number) => `$${value.toFixed(2)}`;
 const formatDate = (value: string | null) =>
   value ? new Date(value).toLocaleString() : "Not yet";
 
+const cleanProductDescription = (value?: string) => {
+  if (!value) {
+    return "";
+  }
+
+  const withoutImages = value.replace(/<img\b[^>]*>/gi, " ");
+  const withoutTags = withoutImages.replace(/<[^>]+>/g, " ");
+  const cleaned = withoutTags
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned;
+};
+
 const buildProductDraft = (product: AdminProduct): ProductDraft => ({
   name: product.name ?? "",
-  description: product.description ?? "",
+  description: cleanProductDescription(product.description),
   imageUrl: product.imageUrl ?? "",
   retailPrice: String(product.retailPrice ?? ""),
   productCost: String(product.productCost ?? ""),
@@ -772,13 +792,13 @@ const AdminPage = () => {
       setProducts((current) =>
         current.map((item) => ({
           ...item,
-          selectedForShop: item._id === payload.data._id,
+          selectedForShop: item._id === payload.data._id ? true : item.selectedForShop,
           status: item._id === payload.data._id ? "active" : item.status,
         })),
       );
       toast({
-        title: "Shop product selected",
-        description: `${payload.data.name} will now appear on the shop page.`,
+        title: "Product added to shop",
+        description: `${payload.data.name} will now appear on the shop page with your other active products.`,
       });
     } catch (error) {
       toast({
