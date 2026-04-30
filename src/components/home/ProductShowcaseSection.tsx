@@ -49,10 +49,10 @@ const ProductShowcaseSection = () => (
         </div>
 
         <Link
-          to="/single-product"
+          to="/shop"
           className="inline-flex items-center gap-2 text-xs font-medium text-foreground transition-colors hover:text-primary sm:text-sm"
         >
-          Product single page
+          Shop all products
           <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </Link>
       </motion.div>

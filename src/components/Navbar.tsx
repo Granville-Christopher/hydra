@@ -11,7 +11,6 @@ const Navbar = () => {
 
   const links = [
     { to: "/", label: "Home" },
-    { to: "/single-product", label: "Product Single Page" },
     { to: "/shop", label: "Shop" },
     { to: "/about", label: "About" },
     { to: "/faq", label: "FAQ" },

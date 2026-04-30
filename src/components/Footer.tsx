@@ -20,9 +20,6 @@ const Footer = () => (
             <Link to="/shop" className="block text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm">
               Shop
             </Link>
-            <Link to="/single-product" className="block text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm">
-              Product Single Page
-            </Link>
             <Link to="/about" className="block text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm">
               Our Story
             </Link>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,50 +102,54 @@ const ShopPage = () => {
               {products.map((product) => {
                 const price = Number(product.retailPrice || product.productCost || 0);
                 return (
-                  <Card key={product._id} className="overflow-hidden shadow-card">
-                    <div className="aspect-square bg-card">
+                  <Card key={product._id} className="flex h-full flex-col overflow-hidden shadow-card">
+                    <Link to={`/product/${product._id}`} className="block aspect-square bg-card">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                        <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                           No image
                         </div>
                       )}
-                    </div>
+                    </Link>
                     <CardHeader>
-                      <CardTitle className="text-lg">{product.name}</CardTitle>
+                      <Link to={`/product/${product._id}`} className="transition-colors hover:text-primary">
+                        <CardTitle className="line-clamp-2 text-lg">{product.name}</CardTitle>
+                      </Link>
                       {(product.variantName || product.variantColor) && (
                         <p className="text-xs text-muted-foreground">
                           {[product.variantName, product.variantColor].filter(Boolean).join(" / ")}
                         </p>
                       )}
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="flex flex-1 flex-col space-y-4">
                       <p className="line-clamp-3 text-sm text-muted-foreground">
                         {product.description || "Imported CJ product ready for your storefront."}
                       </p>
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-heading text-xl font-semibold text-foreground">
-                          {formatMoney(price)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {Number(product.inventory ?? 0)} in stock
-                        </p>
+                      <div className="mt-auto space-y-4 pt-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-heading text-xl font-semibold text-foreground">
+                            {formatMoney(price)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {Number(product.inventory ?? 0)} in stock
+                          </p>
+                        </div>
+                        <Button
+                          className="w-full gradient-rose text-primary-foreground"
+                          onClick={() =>
+                            addProductItem({
+                              id: product._id,
+                              name: product.name,
+                              price,
+                              imageUrl: product.imageUrl,
+                            })
+                          }
+                        >
+                          <ShoppingBag className="h-4 w-4" />
+                          Add to cart
+                        </Button>
                       </div>
-                      <Button
-                        className="w-full gradient-rose text-primary-foreground"
-                        onClick={() =>
-                          addProductItem({
-                            id: product._id,
-                            name: product.name,
-                            price,
-                            imageUrl: product.imageUrl,
-                          })
-                        }
-                      >
-                        <ShoppingBag className="h-4 w-4" />
-                        Add to cart
-                      </Button>
                     </CardContent>
                   </Card>
                 );

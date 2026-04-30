@@ -45,8 +45,7 @@ const App = () => (
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/product" element={<ProductPage />} />
-              <Route path="/single-product" element={<ProductPage />} />
+              <Route path="/product/:productId" element={<ProductPage />} />
               <Route path="/shop" element={<ShopPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/about" element={<AboutPage />} />
