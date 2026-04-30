@@ -19,6 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -266,6 +273,25 @@ const parseOptionalNumber = (value: string) => {
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+const productEditFields = [
+  "cjProductName",
+  "cjProductId",
+  "cjVariantId",
+  "cjProductUrl",
+  "cjSku",
+  "cjVariantName",
+  "cjVariantColor",
+  "cjImageUrl",
+  "supplierName",
+  "warehouse",
+  "cjInventory",
+  "cjShippingMethod",
+  "cjEstimatedDelivery",
+  "sellingPrice",
+  "productCost",
+  "shippingCost",
+] as const;
 
 const AdminPage = () => {
   const [settings, setSettings] = useState<AdminSettings>(defaultSettings);
@@ -713,6 +739,31 @@ const AdminPage = () => {
     }
   };
 
+  const handleSaveLoadedProductSettings = async () => {
+    const payload = Object.fromEntries(productEditFields.map((field) => [field, settings[field]]));
+
+    setSettingsSaving(true);
+
+    try {
+      await apiRequest("/admin/settings", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+
+      toast({
+        title: "Loaded product fields saved",
+        description: "The CJ import field details were saved to admin settings.",
+      });
+    } catch (error) {
+      toast({
+        title: "Save failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   const handleSelectShopProduct = async (product: AdminProduct) => {
     try {
       const payload = await apiRequest(`/products/${product._id}/select-for-shop`, {
@@ -736,6 +787,8 @@ const AdminPage = () => {
       });
     }
   };
+
+  const editingProduct = products.find((product) => product._id === editingProductId) ?? null;
 
   if (authLoading) {
     return (
@@ -1146,220 +1199,7 @@ const AdminPage = () => {
             </TabsContent>
 
             <TabsContent value="sourcing" className="space-y-5">
-              <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-                <Card className="shadow-card">
-                  <CardHeader>
-                    <div>
-                      <CardTitle className="text-xl sm:text-2xl">CJ product import</CardTitle>
-                      <CardDescription>
-                        Select a product from the CJ product catalog below to load its details here, then edit the shop-facing fields.
-                      </CardDescription>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="grid gap-4 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Search product name
-                      </label>
-                      <Input
-                        value={settings.cjProductName}
-                        onChange={(event) => updateText("cjProductName", event.target.value)}
-                        placeholder="Type the CJ product name to import"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        CJ product ID
-                      </label>
-                      <Input
-                        value={settings.cjProductId}
-                        onChange={(event) => updateText("cjProductId", event.target.value)}
-                        placeholder="Imported from CJ, or enter one to refresh"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Variant ID
-                      </label>
-                      <Input
-                        value={settings.cjVariantId}
-                        onChange={(event) => updateText("cjVariantId", event.target.value)}
-                        placeholder="Imported from CJ, or enter one to refresh"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        CJ product URL
-                      </label>
-                      <Input
-                        value={settings.cjProductUrl}
-                        onChange={(event) => updateText("cjProductUrl", event.target.value)}
-                        placeholder="Paste the CJ product page link"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Supplier SKU
-                      </label>
-                      <Input
-                        value={settings.cjSku}
-                        onChange={(event) => updateText("cjSku", event.target.value)}
-                        placeholder="SKU from CJ"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Variant name
-                      </label>
-                      <Input
-                        value={settings.cjVariantName}
-                        onChange={(event) => updateText("cjVariantName", event.target.value)}
-                        placeholder="Color, size, bundle, or option name"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Variant color
-                      </label>
-                      <Input
-                        value={settings.cjVariantColor}
-                        onChange={(event) => updateText("cjVariantColor", event.target.value)}
-                        placeholder="Imported from CJ variant attributes"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        CJ image URL
-                      </label>
-                      <Input
-                        value={settings.cjImageUrl}
-                        onChange={(event) => updateText("cjImageUrl", event.target.value)}
-                        placeholder="Imported product image from CJ"
-                      />
-                    </div>
-                    {settings.cjImageUrl && (
-                      <div className="sm:col-span-2">
-                        <div className="overflow-hidden rounded-xl border border-border bg-background">
-                          <img
-                            src={settings.cjImageUrl}
-                            alt={settings.cjProductName || "Imported CJ product"}
-                            className="h-52 w-full object-contain"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Supplier label
-                      </label>
-                      <Input
-                        value={settings.supplierName}
-                        onChange={(event) => updateText("supplierName", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Warehouse
-                      </label>
-                      <Input
-                        value={settings.warehouse}
-                        onChange={(event) => updateText("warehouse", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        CJ inventory
-                      </label>
-                      <Input
-                        type="number"
-                        value={settings.cjInventory}
-                        onChange={(event) => updateNumber("cjInventory", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Shipping method
-                      </label>
-                      <Input
-                        value={settings.cjShippingMethod}
-                        onChange={(event) => updateText("cjShippingMethod", event.target.value)}
-                        placeholder="CJPacket, USPS, DHL, etc."
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Estimated delivery
-                      </label>
-                      <Input
-                        value={settings.cjEstimatedDelivery}
-                        onChange={(event) => updateText("cjEstimatedDelivery", event.target.value)}
-                        placeholder="Example: 7-15 days"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Last checked in CJ
-                      </label>
-                      <Input
-                        value={settings.cjLastCheckedAt}
-                        onChange={(event) => updateText("cjLastCheckedAt", event.target.value)}
-                        placeholder="Example: 2026-04-29"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Selling price
-                      </label>
-                      <Input
-                        type="number"
-                        value={settings.sellingPrice}
-                        onChange={(event) => updateNumber("sellingPrice", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Product cost
-                      </label>
-                      <Input
-                        type="number"
-                        value={settings.productCost}
-                        onChange={(event) => updateNumber("productCost", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Shipping cost
-                      </label>
-                      <Input
-                        type="number"
-                        value={settings.shippingCost}
-                        onChange={(event) => updateNumber("shippingCost", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Ad cost per order
-                      </label>
-                      <Input
-                        type="number"
-                        value={settings.adCostPerOrder}
-                        onChange={(event) => updateNumber("adCostPerOrder", event.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        Processing days
-                      </label>
-                      <Input
-                        type="number"
-                        value={settings.processingDays}
-                        onChange={(event) => updateNumber("processingDays", event.target.value)}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="space-y-5">
+              <div className="space-y-5">
                   <Card className="shadow-card">
                     <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div>
@@ -1368,7 +1208,7 @@ const AdminPage = () => {
                           Sync CJ products here. Every imported product appears in this catalog; click Load & edit on one product to fill the edit fields.
                         </CardDescription>
                       </div>
-                      <Button variant="outline" onClick={handleImportCjCatalog} disabled={catalogLoading}>
+                      <Button variant="outline" onClick={handleImportCjCatalog} disabled={catalogLoading} className="shrink-0">
                         <RefreshCw className={`h-4 w-4 ${catalogLoading ? "animate-spin" : ""}`} />
                         {catalogLoading ? "Syncing" : "Sync CJ products"}
                       </Button>
@@ -1380,11 +1220,8 @@ const AdminPage = () => {
                         </div>
                       ) : (
                         products.map((product) => {
-                          const isEditing = editingProductId === product._id;
-                          const draft = isEditing ? productDraft : null;
-
                           return (
-                            <div key={product._id} className="rounded-xl border border-border bg-background p-3">
+                            <div key={product._id} className="min-w-0 rounded-xl border border-border bg-background p-3">
                               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                 {product.imageUrl ? (
                                   <img src={product.imageUrl} alt="" className="h-16 w-16 rounded-md object-cover" />
@@ -1398,14 +1235,14 @@ const AdminPage = () => {
                                   <p className="mt-1 text-xs text-muted-foreground">
                                     {[product.sku, product.variantName, product.variantColor].filter(Boolean).join(" / ") || "CJ product"}
                                   </p>
-                                  <p className="mt-1 text-xs text-muted-foreground">
+                                  <p className="mt-1 break-all text-xs text-muted-foreground">
                                     Product ID: {product.cjProductId || "Pending"} | Variant ID: {product.cjVariantId || "Pending"}
                                   </p>
                                   <p className="mt-1 text-xs font-medium text-foreground">
                                     Shop price: {formatMoney(Number(product.retailPrice || product.productCost || 0))}
                                   </p>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                                <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                                   <Badge variant={product.selectedForShop ? "default" : "outline"}>
                                     {product.selectedForShop ? "In shop" : product.status ?? "synced"}
                                   </Badge>
@@ -1422,103 +1259,6 @@ const AdminPage = () => {
                                   </Button>
                                 </div>
                               </div>
-
-                              {draft && (
-                                <div className="mt-4 grid gap-3 border-t border-border pt-4 md:grid-cols-2">
-                                  <div className="md:col-span-2">
-                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                      Storefront product name
-                                    </label>
-                                    <div className="flex flex-col gap-2 sm:flex-row">
-                                      <Input
-                                        value={draft.name}
-                                        onChange={(event) => updateProductDraft("name", event.target.value)}
-                                      />
-                                      <Button type="button" variant="outline" onClick={addHydraShieldToProductName}>
-                                        Add HydraShield
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                      Selling price customers see
-                                    </label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={draft.retailPrice}
-                                      onChange={(event) => updateProductDraft("retailPrice", event.target.value)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                      Product cost
-                                    </label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={draft.productCost}
-                                      onChange={(event) => updateProductDraft("productCost", event.target.value)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                      Shipping cost
-                                    </label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={draft.shippingCost}
-                                      onChange={(event) => updateProductDraft("shippingCost", event.target.value)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                      Inventory
-                                    </label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="1"
-                                      value={draft.inventory}
-                                      onChange={(event) => updateProductDraft("inventory", event.target.value)}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                      Image URL
-                                    </label>
-                                    <Input
-                                      value={draft.imageUrl}
-                                      onChange={(event) => updateProductDraft("imageUrl", event.target.value)}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                      Storefront description
-                                    </label>
-                                    <Textarea
-                                      value={draft.description}
-                                      onChange={(event) => updateProductDraft("description", event.target.value)}
-                                    />
-                                  </div>
-                                  <div className="flex flex-wrap gap-2 md:col-span-2">
-                                    <Button
-                                      type="button"
-                                      onClick={() => void handleSaveProduct(product)}
-                                      disabled={productSavingId === product._id}
-                                    >
-                                      {productSavingId === product._id ? "Saving" : "Save product details"}
-                                    </Button>
-                                    <Button type="button" variant="outline" onClick={handleCancelProductEdit}>
-                                      Cancel
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           );
                         })
@@ -1654,8 +1394,268 @@ const AdminPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
               </div>
+
+              <Dialog
+                open={Boolean(editingProduct && productDraft)}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    handleCancelProductEdit();
+                  }
+                }}
+              >
+                <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-4xl overflow-y-auto">
+                  {editingProduct && productDraft && (
+                    <>
+                      <DialogHeader>
+                        <DialogTitle className="font-heading text-2xl">Edit product for shop</DialogTitle>
+                        <DialogDescription>
+                          Review the loaded CJ details, set your HydraShield storefront name and selling price, then save or put it in the shop.
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+                        <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
+                          <div>
+                            <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">
+                              CJ import fields
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              These are loaded from the catalog item you clicked.
+                            </p>
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="sm:col-span-2">
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Product name
+                              </label>
+                              <Input
+                                value={settings.cjProductName}
+                                onChange={(event) => updateText("cjProductName", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                CJ product ID
+                              </label>
+                              <Input
+                                value={settings.cjProductId}
+                                onChange={(event) => updateText("cjProductId", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Variant ID
+                              </label>
+                              <Input
+                                value={settings.cjVariantId}
+                                onChange={(event) => updateText("cjVariantId", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Supplier SKU
+                              </label>
+                              <Input
+                                value={settings.cjSku}
+                                onChange={(event) => updateText("cjSku", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Variant
+                              </label>
+                              <Input
+                                value={settings.cjVariantName}
+                                onChange={(event) => updateText("cjVariantName", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Color
+                              </label>
+                              <Input
+                                value={settings.cjVariantColor}
+                                onChange={(event) => updateText("cjVariantColor", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Inventory
+                              </label>
+                              <Input
+                                type="number"
+                                value={settings.cjInventory}
+                                onChange={(event) => updateNumber("cjInventory", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Supplier
+                              </label>
+                              <Input
+                                value={settings.supplierName}
+                                onChange={(event) => updateText("supplierName", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Warehouse
+                              </label>
+                              <Input
+                                value={settings.warehouse}
+                                onChange={(event) => updateText("warehouse", event.target.value)}
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                CJ image URL
+                              </label>
+                              <Input
+                                value={settings.cjImageUrl}
+                                onChange={(event) => updateText("cjImageUrl", event.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => void handleSaveLoadedProductSettings()}
+                            disabled={settingsSaving}
+                          >
+                            {settingsSaving ? "Saving" : "Save CJ fields"}
+                          </Button>
+                        </div>
+
+                        <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
+                          <div>
+                            <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">
+                              Storefront details
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Customers see these values on the shop page.
+                            </p>
+                          </div>
+
+                          {productDraft.imageUrl && (
+                            <div className="overflow-hidden rounded-xl border border-border bg-card">
+                              <img
+                                src={productDraft.imageUrl}
+                                alt={productDraft.name}
+                                className="h-48 w-full object-contain"
+                              />
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                              Storefront product name
+                            </label>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                              <Input
+                                value={productDraft.name}
+                                onChange={(event) => updateProductDraft("name", event.target.value)}
+                              />
+                              <Button type="button" variant="outline" onClick={addHydraShieldToProductName}>
+                                Add HydraShield
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Selling price customers see
+                              </label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={productDraft.retailPrice}
+                                onChange={(event) => updateProductDraft("retailPrice", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Product cost
+                              </label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={productDraft.productCost}
+                                onChange={(event) => updateProductDraft("productCost", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Shipping cost
+                              </label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={productDraft.shippingCost}
+                                onChange={(event) => updateProductDraft("shippingCost", event.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Inventory
+                              </label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={productDraft.inventory}
+                                onChange={(event) => updateProductDraft("inventory", event.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                              Image URL
+                            </label>
+                            <Input
+                              value={productDraft.imageUrl}
+                              onChange={(event) => updateProductDraft("imageUrl", event.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                              Storefront description
+                            </label>
+                            <Textarea
+                              value={productDraft.description}
+                              onChange={(event) => updateProductDraft("description", event.target.value)}
+                            />
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              onClick={() => void handleSaveProduct(editingProduct)}
+                              disabled={productSavingId === editingProduct._id}
+                            >
+                              {productSavingId === editingProduct._id ? "Saving" : "Save product details"}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={editingProduct.selectedForShop ? "outline" : "default"}
+                              onClick={() => void handleSelectShopProduct(editingProduct)}
+                              disabled={Boolean(editingProduct.selectedForShop)}
+                            >
+                              {editingProduct.selectedForShop ? "Already in shop" : "Put in shop"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             <TabsContent value="orders" className="space-y-5">
