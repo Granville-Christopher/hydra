@@ -61,6 +61,7 @@ type AdminSettings = {
   lowStockAlerts: boolean;
   orderAutoConfirm: boolean;
   notes: string;
+  sellingPriceNaira: number;
   paystackPublicKey: string;
   paystackSecretKey: string;
 };
@@ -159,6 +160,7 @@ const defaultSettings: AdminSettings = {
   orderAutoConfirm: false,
   notes:
     "Use the fastest reliable warehouse first, confirm supplier stock before scaling ads, and keep a backup product or supplier ready.",
+  sellingPriceNaira: 0,
   paystackPublicKey: "",
   paystackSecretKey: "",
 };
@@ -336,6 +338,8 @@ const AdminPage = () => {
   const [credentialsSaving, setCredentialsSaving] = useState(false);
   const [connectionLoading, setConnectionLoading] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
+  const [usdToNgn, setUsdToNgn] = useState<number>(0);
+  const [rateLoading, setRateLoading] = useState(false);
 
   const apiRequest = async (
     path: string,
@@ -381,6 +385,18 @@ const AdminPage = () => {
     setSettings({ ...defaultSettings, ...settingsPayload.data });
     setCjCredentials(credentialsPayload.data);
     setProducts(productsPayload.data ?? []);
+
+    try {
+      setRateLoading(true);
+      const ratePayload = await apiRequest("/admin/exchange-rate", {}, true, authTokenOverride);
+      if (ratePayload?.data?.rate) {
+        setUsdToNgn(ratePayload.data.rate);
+      }
+    } catch {
+      // Exchange rate fetch failed silently
+    } finally {
+      setRateLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -1834,30 +1850,133 @@ const AdminPage = () => {
                 <CardHeader>
                   <CardTitle className="text-xl sm:text-2xl">Paystack Settings</CardTitle>
                   <CardDescription>
-                    Configure your Paystack public and secret keys for accepting payments.
+                    Configure your Paystack keys and Naira selling price. CJ costs are shown in USD (read-only) with live Naira conversion.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 max-w-md">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                      Public Key
-                    </label>
-                    <Input
-                      value={settings.paystackPublicKey}
-                      onChange={(event) => updateText("paystackPublicKey", event.target.value)}
-                      placeholder="pk_test_..."
-                    />
+                <CardContent className="space-y-6">
+                  <div className="rounded-xl border border-border bg-background p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.16em] text-primary">Live USD → NGN Rate</p>
+                        <p className="mt-2 font-heading text-2xl font-semibold text-foreground">
+                          {rateLoading
+                            ? "Loading..."
+                            : usdToNgn > 0
+                              ? `₦${usdToNgn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                              : "Unavailable"}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">per $1 USD — refreshed every hour from the live market</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={rateLoading}
+                        onClick={async () => {
+                          setRateLoading(true);
+                          try {
+                            const ratePayload = await apiRequest("/admin/exchange-rate");
+                            if (ratePayload?.data?.rate) {
+                              setUsdToNgn(ratePayload.data.rate);
+                              toast({ title: "Rate updated", description: `1 USD = ₦${ratePayload.data.rate.toLocaleString()}` });
+                            }
+                          } catch {
+                            toast({ title: "Rate fetch failed", description: "Could not refresh the exchange rate." });
+                          } finally {
+                            setRateLoading(false);
+                          }
+                        }}
+                      >
+                        <RefreshCw className={`h-4 w-4 ${rateLoading ? "animate-spin" : ""}`} />
+                        Refresh
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                      Secret Key
-                    </label>
-                    <Input
-                      type="password"
-                      value={settings.paystackSecretKey}
-                      onChange={(event) => updateText("paystackSecretKey", event.target.value)}
-                      placeholder="sk_test_..."
-                    />
+
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      { label: "CJ Product Cost", usd: settings.productCost },
+                      { label: "CJ Shipping Cost", usd: settings.shippingCost },
+                      { label: "Ad Cost / Order", usd: settings.adCostPerOrder },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-xl border border-border bg-background p-4">
+                        <p className="text-xs uppercase tracking-[0.16em] text-primary">{item.label}</p>
+                        <p className="mt-2 font-heading text-xl font-semibold text-foreground">
+                          ${item.usd.toFixed(2)}
+                        </p>
+                        {usdToNgn > 0 && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            ≈ ₦{(item.usd * usdToNgn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-background p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-primary">Total Landed Cost (USD)</p>
+                    <p className="mt-2 font-heading text-2xl font-semibold text-foreground">
+                      ${(settings.productCost + settings.shippingCost + settings.adCostPerOrder).toFixed(2)}
+                    </p>
+                    {usdToNgn > 0 && (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        ≈ ₦{((settings.productCost + settings.shippingCost + settings.adCostPerOrder) * usdToNgn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="max-w-md space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Selling Price (₦ Naira)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={settings.sellingPriceNaira || ""}
+                        onChange={(event) => updateNumber("sellingPriceNaira", event.target.value)}
+                        placeholder="e.g. 25000"
+                      />
+                      {usdToNgn > 0 && settings.sellingPriceNaira > 0 && (
+                        <div className="mt-2 rounded-lg border border-border bg-background p-3">
+                          <p className="text-xs text-muted-foreground">
+                            ≈ ${(settings.sellingPriceNaira / usdToNgn).toFixed(2)} USD equivalent
+                          </p>
+                          <p className={`mt-1 text-sm font-semibold ${
+                            settings.sellingPriceNaira - (settings.productCost + settings.shippingCost + settings.adCostPerOrder) * usdToNgn > 0
+                              ? "text-emerald-600"
+                              : "text-red-500"
+                          }`}>
+                            Naira profit per order: ₦{(settings.sellingPriceNaira - (settings.productCost + settings.shippingCost + settings.adCostPerOrder) * usdToNgn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="max-w-md space-y-4 border-t border-border pt-6">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">Paystack API Keys</p>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Public Key
+                      </label>
+                      <Input
+                        value={settings.paystackPublicKey}
+                        onChange={(event) => updateText("paystackPublicKey", event.target.value)}
+                        placeholder="pk_test_..."
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Secret Key
+                      </label>
+                      <Input
+                        type="password"
+                        value={settings.paystackSecretKey}
+                        onChange={(event) => updateText("paystackSecretKey", event.target.value)}
+                        placeholder="sk_test_..."
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
