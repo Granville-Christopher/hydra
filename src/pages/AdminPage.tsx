@@ -1652,24 +1652,37 @@ const AdminPage = () => {
                               <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                                 Selling price customers see (₦ Naira)
                               </label>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="100"
-                                value={productDraft.retailPrice}
-                                onChange={(event) => updateProductDraft("retailPrice", event.target.value)}
-                              />
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="100"
+                                  className="pl-7"
+                                  value={productDraft.retailPrice}
+                                  onChange={(event) => updateProductDraft("retailPrice", event.target.value)}
+                                  placeholder="e.g. 25000"
+                                />
+                              </div>
+                              {usdToNgn > 0 && Number(productDraft.retailPrice) > 0 && (
+                                <p className="mt-1 text-[10px] text-muted-foreground">
+                                  ≈ {formatUSD(Number(productDraft.retailPrice) / usdToNgn)} USD equivalent
+                                </p>
+                              )}
                             </div>
                             <div>
                               <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                                 Product cost (USD)
                               </label>
-                              <Input
-                                type="number"
-                                value={productDraft.productCost}
-                                disabled
-                                className="bg-muted opacity-80"
-                              />
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input
+                                  type="number"
+                                  value={productDraft.productCost}
+                                  disabled
+                                  className="bg-muted pl-7 opacity-80"
+                                />
+                              </div>
                               {usdToNgn > 0 && (
                                 <p className="mt-1 text-[10px] text-muted-foreground">≈ ₦{(Number(productDraft.productCost) * usdToNgn).toLocaleString()}</p>
                               )}
@@ -1973,14 +1986,18 @@ const AdminPage = () => {
                       <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Selling Price (₦ Naira)
                       </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="100"
-                        value={settings.sellingPriceNaira || ""}
-                        onChange={(event) => updateNumber("sellingPriceNaira", event.target.value)}
-                        placeholder="e.g. 25000"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="100"
+                          className="pl-7"
+                          value={settings.sellingPriceNaira || ""}
+                          onChange={(event) => updateNumber("sellingPriceNaira", event.target.value)}
+                          placeholder="e.g. 25000"
+                        />
+                      </div>
                       <p className="mt-1 text-xs text-muted-foreground">Price per product unit on the storefront in Naira.</p>
                       {usdToNgn > 0 && settings.sellingPriceNaira > 0 && (
                         <div className="mt-2 rounded-lg border border-border bg-background p-3">
@@ -2002,14 +2019,18 @@ const AdminPage = () => {
                       <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Ad Cost Per Order (₦ Naira)
                       </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="100"
-                        value={settings.adCostPerOrder || ""}
-                        onChange={(event) => updateNumber("adCostPerOrder", event.target.value)}
-                        placeholder="e.g. 5000"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="100"
+                          className="pl-7"
+                          value={settings.adCostPerOrder || ""}
+                          onChange={(event) => updateNumber("adCostPerOrder", event.target.value)}
+                          placeholder="e.g. 5000"
+                        />
+                      </div>
                       <p className="mt-1 text-xs text-muted-foreground">Average amount spent on ads to get one order in Naira.</p>
                     </div>
                     </div>
