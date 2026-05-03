@@ -828,6 +828,30 @@ const AdminPage = () => {
     }
   };
 
+  const handleRemoveShopProduct = async (product: AdminProduct) => {
+    try {
+      const payload = await apiRequest(`/products/${product._id}/remove-from-shop`, {
+        method: "POST",
+      });
+      setProducts((current) =>
+        current.map((item) => ({
+          ...item,
+          selectedForShop: item._id === payload.data._id ? false : item.selectedForShop,
+          status: item._id === payload.data._id ? "synced" : item.status,
+        })),
+      );
+      toast({
+        title: "Product removed from shop",
+        description: `${payload.data.name} has been removed from the shop.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Remove failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    }
+  };
+
   const editingProduct = products.find((product) => product._id === editingProductId) ?? null;
 
   if (authLoading) {
@@ -1292,14 +1316,24 @@ const AdminPage = () => {
                                   <Button size="sm" variant="outline" onClick={() => handleLoadProductIntoSettings(product)}>
                                     Load & edit
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant={product.selectedForShop ? "outline" : "default"}
-                                    onClick={() => void handleSelectShopProduct(product)}
-                                    disabled={Boolean(product.selectedForShop)}
-                                  >
-                                    {product.selectedForShop ? "Selected" : "Put in shop"}
-                                  </Button>
+                                  {product.selectedForShop ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-red-300 text-red-600 hover:bg-red-50"
+                                      onClick={() => void handleRemoveShopProduct(product)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      Remove from shop
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => void handleSelectShopProduct(product)}
+                                    >
+                                      Put in shop
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             </div>
