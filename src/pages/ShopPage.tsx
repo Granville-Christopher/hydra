@@ -28,7 +28,7 @@ type ShopProduct = {
   variantColor?: string;
 };
 
-const formatMoney = (value: number) => `$${value.toFixed(2)}`;
+const formatMoney = (value: number) => `₦${value.toLocaleString()}`;
 
 const ShopPage = () => {
   const { addProductItem } = useCart();

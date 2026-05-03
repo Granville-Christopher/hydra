@@ -23,7 +23,7 @@ type ShopProduct = {
   warehouse?: string;
 };
 
-const formatMoney = (value: number) => `$${value.toFixed(2)}`;
+const formatMoney = (value: number) => `₦${value.toLocaleString()}`;
 
 const ProductPage = () => {
   const { productId } = useParams();
