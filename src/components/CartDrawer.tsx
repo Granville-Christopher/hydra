@@ -28,7 +28,7 @@ const CartDrawer = () => {
                   )}
                   <div className="flex-1">
                     <p className="text-xs font-medium text-foreground sm:text-sm">{item.name}</p>
-                    <p className="mt-1 text-xs font-semibold text-primary sm:text-sm">${item.price}</p>
+                    <p className="mt-1 text-xs font-semibold text-primary sm:text-sm">₦{item.price.toLocaleString()}</p>
                     <div className="mt-2 flex items-center gap-2">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -58,7 +58,7 @@ const CartDrawer = () => {
             <div className="space-y-4 border-t border-border pt-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">Total</span>
-                <span className="font-heading text-base font-semibold text-foreground sm:text-lg">${totalPrice}</span>
+                <span className="font-heading text-base font-semibold text-foreground sm:text-lg">₦{totalPrice.toLocaleString()}</span>
               </div>
               <Link to="/cart" onClick={() => setIsOpen(false)}>
                 <Button className="w-full gradient-rose text-xs uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 sm:text-sm sm:normal-case sm:tracking-normal">

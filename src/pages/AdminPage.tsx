@@ -192,7 +192,7 @@ const sampleOrders = [
     customer: "Ava Johnson",
     product: "Test Product A",
     status: "Ready to Source",
-    total: "$28.00",
+    total: "₦25,000",
     tracking: "Pending",
   },
   {
@@ -200,7 +200,7 @@ const sampleOrders = [
     customer: "Noah Smith",
     product: "Bundle Offer",
     status: "Submitted to CJ",
-    total: "$52.00",
+    total: "₦45,000",
     tracking: "Awaiting sync",
   },
   {
@@ -208,7 +208,7 @@ const sampleOrders = [
     customer: "Emma Brown",
     product: "Test Product B",
     status: "In Fulfillment",
-    total: "$28.00",
+    total: "₦25,000",
     tracking: "CJUS984221",
   },
   {
@@ -216,7 +216,7 @@ const sampleOrders = [
     customer: "Liam Davis",
     product: "Bundle Offer",
     status: "Delivered",
-    total: "$52.00",
+    total: "₦45,000",
     tracking: "CJUS983915",
   },
 ];
@@ -255,7 +255,9 @@ const statusStyles: Record<string, string> = {
   Delivered: "border-emerald-300 bg-emerald-100 text-emerald-800",
 };
 
-const formatMoney = (value: number) => `$${value.toFixed(2)}`;
+const formatUSD = (value: number) => `$${value.toFixed(2)}`;
+const formatNaira = (value: number) => `₦${value.toLocaleString()}`;
+const formatMoney = formatNaira; // Default to Naira for shop-facing values
 
 const formatDate = (value: string | null) =>
   value ? new Date(value).toLocaleString() : "Not yet";
@@ -449,9 +451,15 @@ const AdminPage = () => {
     void restoreSession();
   }, [token]);
 
-  const totalLandedCost = settings.productCost + settings.shippingCost + settings.adCostPerOrder;
-  const grossProfit = settings.sellingPrice - totalLandedCost;
-  const marginPercent = settings.sellingPrice > 0 ? (grossProfit / settings.sellingPrice) * 100 : 0;
+  const effectiveRate = usdToNgn || 1500;
+  const totalLandedCostUSD = settings.productCost + settings.shippingCost;
+  const totalLandedCostNaira = totalLandedCostUSD * effectiveRate + settings.adCostPerOrder;
+  const grossProfitNaira = settings.sellingPriceNaira - totalLandedCostNaira;
+  const marginPercent = settings.sellingPriceNaira > 0 ? (grossProfitNaira / settings.sellingPriceNaira) * 100 : 0;
+  
+  // For backwards compatibility or simplified logic where needed
+  const grossProfit = grossProfitNaira; 
+  const totalLandedCost = totalLandedCostNaira;
   const readinessChecks = [
     Boolean(settings.cjProductId),
     Boolean(settings.cjVariantId),
@@ -1047,7 +1055,7 @@ const AdminPage = () => {
               {
                 icon: BadgeDollarSign,
                 label: "Selling Price",
-                value: formatMoney(settings.sellingPrice),
+                value: formatMoney(settings.sellingPriceNaira),
                 note: "Current storefront price",
               },
               {
@@ -1146,10 +1154,10 @@ const AdminPage = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {[
-                      ["Selling price", formatMoney(settings.sellingPrice)],
-                      ["Product cost", formatMoney(settings.productCost)],
-                      ["Shipping cost", formatMoney(settings.shippingCost)],
-                      ["Ad cost/order", formatMoney(settings.adCostPerOrder)],
+                      ["Selling price (₦)", formatNaira(settings.sellingPriceNaira)],
+                      ["Product cost (USD)", formatUSD(settings.productCost)],
+                      ["Shipping cost (USD)", formatUSD(settings.shippingCost)],
+                      ["Ad cost/order (₦)", formatNaira(settings.adCostPerOrder)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex items-center justify-between border-b border-border pb-3 text-sm">
                         <span className="text-muted-foreground">{label}</span>
@@ -1162,7 +1170,7 @@ const AdminPage = () => {
                         {marginPercent.toFixed(1)}%
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Estimated profit per order: {formatMoney(grossProfit)}
+                        Estimated profit per order: {formatNaira(grossProfitNaira)}
                       </p>
                     </div>
                   </CardContent>
@@ -1198,7 +1206,7 @@ const AdminPage = () => {
                           tickLine={false}
                           axisLine={false}
                           tickMargin={8}
-                          tickFormatter={(value) => `$${value}`}
+                          tickFormatter={(value) => `₦${value.toLocaleString()}`}
                         />
                         <YAxis yAxisId="orders" orientation="right" hide />
                         <ChartTooltip
@@ -1247,7 +1255,7 @@ const AdminPage = () => {
                           tickLine={false}
                           axisLine={false}
                           tickMargin={8}
-                          tickFormatter={(value) => `$${value}`}
+                          tickFormatter={(value) => `₦${value.toLocaleString()}`}
                         />
                         <ChartTooltip
                           cursor={false}
@@ -1642,39 +1650,43 @@ const AdminPage = () => {
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div>
                               <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                Selling price customers see
+                                Selling price customers see (₦ Naira)
                               </label>
                               <Input
                                 type="number"
                                 min="0"
-                                step="0.01"
+                                step="100"
                                 value={productDraft.retailPrice}
                                 onChange={(event) => updateProductDraft("retailPrice", event.target.value)}
                               />
                             </div>
                             <div>
                               <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                Product cost
+                                Product cost (USD)
                               </label>
                               <Input
                                 type="number"
-                                min="0"
-                                step="0.01"
                                 value={productDraft.productCost}
-                                onChange={(event) => updateProductDraft("productCost", event.target.value)}
+                                disabled
+                                className="bg-muted opacity-80"
                               />
+                              {usdToNgn > 0 && (
+                                <p className="mt-1 text-[10px] text-muted-foreground">≈ ₦{(Number(productDraft.productCost) * usdToNgn).toLocaleString()}</p>
+                              )}
                             </div>
                             <div>
                               <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                Shipping cost
+                                Shipping cost (USD)
                               </label>
                               <Input
                                 type="number"
-                                min="0"
-                                step="0.01"
                                 value={productDraft.shippingCost}
-                                onChange={(event) => updateProductDraft("shippingCost", event.target.value)}
+                                disabled
+                                className="bg-muted opacity-80"
                               />
+                              {usdToNgn > 0 && (
+                                <p className="mt-1 text-[10px] text-muted-foreground">≈ ₦{(Number(productDraft.shippingCost) * usdToNgn).toLocaleString()}</p>
+                              )}
                             </div>
                             <div>
                               <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -1928,18 +1940,18 @@ const AdminPage = () => {
 
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {[
-                      { label: "CJ Product Cost", usd: settings.productCost },
-                      { label: "CJ Shipping Cost", usd: settings.shippingCost },
-                      { label: "Ad Cost / Order", usd: settings.adCostPerOrder },
+                      { label: "CJ Product Cost (USD)", val: settings.productCost, isUsd: true },
+                      { label: "CJ Shipping Cost (USD)", val: settings.shippingCost, isUsd: true },
+                      { label: "Ad Cost / Order (₦)", val: settings.adCostPerOrder, isUsd: false },
                     ].map((item) => (
                       <div key={item.label} className="rounded-xl border border-border bg-background p-4">
                         <p className="text-xs uppercase tracking-[0.16em] text-primary">{item.label}</p>
                         <p className="mt-2 font-heading text-xl font-semibold text-foreground">
-                          ${item.usd.toFixed(2)}
+                          {item.isUsd ? formatUSD(item.val) : formatNaira(item.val)}
                         </p>
-                        {usdToNgn > 0 && (
+                        {usdToNgn > 0 && item.isUsd && (
                           <p className="mt-1 text-sm text-muted-foreground">
-                            ≈ ₦{(item.usd * usdToNgn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ≈ ₦{(item.val * usdToNgn).toLocaleString()}
                           </p>
                         )}
                       </div>
@@ -1947,15 +1959,13 @@ const AdminPage = () => {
                   </div>
 
                   <div className="rounded-xl border border-border bg-background p-4">
-                    <p className="text-xs uppercase tracking-[0.16em] text-primary">Total Landed Cost (USD)</p>
+                    <p className="text-xs uppercase tracking-[0.16em] text-primary">Total Landed Cost (₦ Naira)</p>
                     <p className="mt-2 font-heading text-2xl font-semibold text-foreground">
-                      ${(settings.productCost + settings.shippingCost + settings.adCostPerOrder).toFixed(2)}
+                      {formatNaira(totalLandedCostNaira)}
                     </p>
-                    {usdToNgn > 0 && (
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        ≈ ₦{((settings.productCost + settings.shippingCost + settings.adCostPerOrder) * usdToNgn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    )}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      ({formatUSD(settings.productCost + settings.shippingCost)} USD × ₦{effectiveRate.toLocaleString()}) + {formatNaira(settings.adCostPerOrder)} Ad Cost
+                    </p>
                   </div>
 
                   <div className="max-w-md space-y-4">
@@ -1971,20 +1981,37 @@ const AdminPage = () => {
                         onChange={(event) => updateNumber("sellingPriceNaira", event.target.value)}
                         placeholder="e.g. 25000"
                       />
+                      <p className="mt-1 text-xs text-muted-foreground">Price per product unit on the storefront in Naira.</p>
                       {usdToNgn > 0 && settings.sellingPriceNaira > 0 && (
                         <div className="mt-2 rounded-lg border border-border bg-background p-3">
                           <p className="text-xs text-muted-foreground">
-                            ≈ ${(settings.sellingPriceNaira / usdToNgn).toFixed(2)} USD equivalent
+                            ≈ {formatUSD(settings.sellingPriceNaira / usdToNgn)} USD equivalent
                           </p>
                           <p className={`mt-1 text-sm font-semibold ${
-                            settings.sellingPriceNaira - (settings.productCost + settings.shippingCost + settings.adCostPerOrder) * usdToNgn > 0
+                            grossProfitNaira > 0
                               ? "text-emerald-600"
                               : "text-red-500"
                           }`}>
-                            Naira profit per order: ₦{(settings.sellingPriceNaira - (settings.productCost + settings.shippingCost + settings.adCostPerOrder) * usdToNgn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            Naira profit per order: {formatNaira(grossProfitNaira)}
                           </p>
                         </div>
                       )}
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Ad Cost Per Order (₦ Naira)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={settings.adCostPerOrder || ""}
+                        onChange={(event) => updateNumber("adCostPerOrder", event.target.value)}
+                        placeholder="e.g. 5000"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">Average amount spent on ads to get one order in Naira.</p>
+                    </div>
                     </div>
                   </div>
 

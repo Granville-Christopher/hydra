@@ -4,6 +4,8 @@ import { ArrowLeft, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 
+const formatMoney = (value: number) => `₦${value.toLocaleString()}`;
+
 const CartPage = () => {
   const { items, removeItem, updateQuantity, totalPrice } = useCart();
 
@@ -45,7 +47,7 @@ const CartPage = () => {
             >
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">{item.name}</p>
-                <p className="mt-1 text-xs font-semibold text-primary sm:text-sm">${item.price} each</p>
+                <p className="mt-1 text-xs font-semibold text-primary sm:text-sm">₦{item.price.toLocaleString()} each</p>
                 <div className="mt-3 flex items-center gap-3">
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -70,7 +72,7 @@ const CartPage = () => {
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
-                <p className="font-heading text-base font-semibold text-foreground sm:text-lg">${item.price * item.quantity}</p>
+                <p className="font-heading text-base font-semibold text-foreground sm:text-lg">₦{(item.price * item.quantity).toLocaleString()}</p>
               </div>
             </motion.div>
           ))}
@@ -79,7 +81,7 @@ const CartPage = () => {
         <div className="mt-8 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-6">
           <div className="flex justify-between text-xs text-muted-foreground sm:text-sm">
             <span>Subtotal</span>
-            <span>${totalPrice}</span>
+            <span>₦{totalPrice.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-xs text-muted-foreground sm:text-sm">
             <span>Shipping</span>
@@ -87,7 +89,7 @@ const CartPage = () => {
           </div>
           <div className="flex justify-between border-t border-border pt-4">
             <span className="text-sm font-semibold text-foreground sm:text-base">Total</span>
-            <span className="font-heading text-lg font-semibold text-foreground sm:text-xl">${totalPrice}</span>
+            <span className="font-heading text-lg font-semibold text-foreground sm:text-xl">₦{totalPrice.toLocaleString()}</span>
           </div>
           <Button
             className="w-full gradient-rose text-xs uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 sm:text-sm sm:normal-case sm:tracking-wide"
@@ -95,7 +97,7 @@ const CartPage = () => {
           >
             Proceed to Checkout
           </Button>
-          <p className="text-center text-xs text-muted-foreground">Secure checkout powered by Stripe</p>
+          <p className="text-center text-xs text-muted-foreground">Secure checkout powered by Paystack</p>
         </div>
       </div>
     </main>

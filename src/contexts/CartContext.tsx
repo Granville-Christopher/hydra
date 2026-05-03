@@ -18,6 +18,11 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  removeItem: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+  clearCart: () => void;
+  totalItems: number;
+  totalPrice: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
@@ -25,8 +30,8 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const PRODUCTS = {
-  single: { id: "hydra-single", name: "Hydrating Barrier Repair Moisturizer", price: 28, variant: "single" as const },
-  bundle: { id: "hydra-bundle", name: "Hydrating Barrier Repair Moisturizer (2-Pack)", price: 52, variant: "bundle" as const },
+  single: { id: "hydra-single", name: "Hydrating Barrier Repair Moisturizer", price: 25000, variant: "single" as const },
+  bundle: { id: "hydra-bundle", name: "Hydrating Barrier Repair Moisturizer (2-Pack)", price: 45000, variant: "bundle" as const },
 };
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
